@@ -31,7 +31,7 @@ def gps_reader():
         except:
             pass
 
-# Start background GPS thread
+# Start background GPS thread so it doesn't block main Flask server
 threading.Thread(target=gps_reader, daemon=True).start()
 
 
@@ -59,7 +59,7 @@ def draw_text_with_bg(frame, text, position, font, scale, color, thickness):
 # Streaming camera data to website
 def generate_frames():
     while True:
-        frame = camera.capture_array()
+        frame = camera.capture_array() # Continously captures frames
 
         # GPS text overlay
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -72,16 +72,18 @@ def generate_frames():
         draw_text_with_bg(frame, gps_lat, (15, 60), font, scale, wsu_gold, thickness)
         draw_text_with_bg(frame, gps_lng, (15, 90), font, scale, wsu_gold, thickness)
 
-        # Camera frames
+        # Encode fream as JPEG for streaming
         ret, buffer = cv2.imencode('.jpg', frame, [cv2.IMWRITE_JPEG_QUALITY, 50])
         frame = buffer.tobytes()
 
+        # Yield frame in multipart format for HTTP streaming
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
 
 @app.route('/')
 # Website 
 def index():
+    # Serve main HTML page with video stream
     return render_template_string("""
 <!DOCTYPE html>
 <html lang="en">
@@ -193,7 +195,10 @@ def index():
 # Video
 @app.route('/video_feed')
 def video_feed():
+    # Route to stream camera frames
     return Response(generate_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+# Running Flask app
 if __name__ == '__main__':
+    # Run the app on all IPs (0.0.0.0), port 5000, threaded for multiple clients
     app.run(host='0.0.0.0', port=5000, threaded=True)
