@@ -15,7 +15,8 @@ try:
             newmsg = pynmea2.parse(newdata)
             lat = newmsg.latitude
             lng = newmsg.longitude
-            gps = f"Latitude: {lat} Longitude: {lng}"
+            alt = newmsg.altitude
+            gps = f"Latitude: {lat} Longitude: {lng} Altitude: {alt}"
             print(gps)
 
 except KeyboardInterrupt:
