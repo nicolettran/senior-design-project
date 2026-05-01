@@ -6,13 +6,13 @@ from logger import log_event
 import time
 
 def main():
-    print("Initializing Asynchronous Drone Inspection System...")
+    print("Initializing drone inspection system...")
     stream = CameraStream()
     
     # Warm-up time for camera and GPS lock
     time.sleep(2)
     
-    print("In flight... ML processing is active.")
+    print("In flight...")
 
     try:
         while True:
