@@ -5,6 +5,7 @@ from risk import evaluate_risk
 from logger import log_event
 import time
 
+# Test
 def main():
     print("Initializing drone inspection system...")
     stream = CameraStream()
