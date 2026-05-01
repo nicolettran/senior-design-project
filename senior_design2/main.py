@@ -1,34 +1,45 @@
-from camera import get_frame
+from camera import CameraStream
 from vegetation_model import detect_vegetation
 from powerline_cv import detect_powerlines
 from risk import evaluate_risk
 from logger import log_event
-from gps import get_gps
-# All modules tied together: camera, GPS, vegetation detection, powerline CV, risk eval, log
-
 import time
 
-# Runs continuous loop as drone flies assessing risk
 def main():
-    print("In flight...\n")
+    print("Initializing Asynchronous Drone Inspection System...")
+    stream = CameraStream()
+    
+    # Warm-up time for camera and GPS lock
+    time.sleep(2)
+    
+    print("In flight... ML processing is active.")
 
     try:
         while True:
-            frame = get_frame()
+            # 1. Grab latest data bundle (Zero hardware latency here)
+            frame, gps = stream.get_latest()
 
+            if frame is None:
+                continue
+
+            # 2. Parallel AI and CV Processing
+            # Note: These are independent modules for vegetation and lines
             veg_boxes = detect_vegetation(frame)
             line_segments = detect_powerlines(frame)
 
+            # 3. Analyze spatial relationship (Risk Assessment)
             risk_detected = evaluate_risk(veg_boxes, line_segments)
 
             if risk_detected:
-                gps = get_gps()
+                # Use the GPS bundle from the exact moment the frame was taken
                 log_event(frame, gps, veg_boxes, line_segments)
 
-            time.sleep(0.1) # small delay to stabilize CPU
+            # Small sleep to yield CPU time for background threads
+            time.sleep(0.01) 
 
     except KeyboardInterrupt:
-        print("\nFlight terminated. Exiting safely.")
+        print("\nTerminating flight threads...")
+        stream.stop()
 
 if __name__ == "__main__":
     main()
